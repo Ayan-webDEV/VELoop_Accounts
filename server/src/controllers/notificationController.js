@@ -1,0 +1,3 @@
+import Notification from '../models/Notification.js';import DeletionRequest from '../models/DeletionRequest.js';
+export async function listNotifications(req,res){const [items,requests,unread]=await Promise.all([Notification.find().populate('brand','name').sort({createdAt:-1}).limit(100).lean(),DeletionRequest.find({status:'pending'}).sort({createdAt:-1}).lean(),Notification.countDocuments({readBy:{$ne:req.admin._id}})]);res.json({items,requests,unread})}
+export async function markRead(req,res){await Notification.updateMany({_id:{$in:req.body.ids||[]},readBy:{$ne:req.admin._id}},{$addToSet:{readBy:req.admin._id}});res.json({ok:true})}
