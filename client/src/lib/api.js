@@ -1,6 +1,6 @@
 import axios from "axios";
 const api = axios.create({
-  baseURL: import.meta.env.API_URL || "http://localhost:5000/api",
+  baseURL: "https://veloop-accounts.onrender.com/api",
 });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("velop_token");
