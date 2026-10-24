@@ -3,6 +3,7 @@
 Private MERN application for multi-brand financial records. React + Vite + Tailwind CSS v4, Express, MongoDB/Mongoose, JWT authentication, and Recharts.
 
 ## Included
+
 - Exactly two pre-created admin accounts; no public signup or account creation.
 - Admin One is Founder & CEO and can create/edit brand accounts. Admin Two is the finance admin.
 - Pre-seeded brand accounts: **VELoop Rewards & Engagement**, **VELoop Internships**, and **Formia**. Founder can create additional brands.
@@ -15,10 +16,12 @@ Private MERN application for multi-brand financial records. React + Vite + Tailw
 - Password hashing (bcrypt), JWT sessions, Helmet and login rate limiting.
 
 ## Requirements
+
 - Node.js 20+ recommended
 - MongoDB local instance or MongoDB Atlas
 
 ## Setup
+
 1. Extract the ZIP and open the project folder in a terminal.
 2. Install dependencies from the project root:
    ```bash
@@ -35,9 +38,11 @@ Private MERN application for multi-brand financial records. React + Vite + Tailw
 On first startup, the two configured admin accounts and three default brands are seeded. Existing admin passwords are not reset by seeding. The first admin is assigned the `founder` role. There is no signup endpoint or public user-creation UI.
 
 ## Environment
-Set `CLIENT_URL` to the exact frontend origin(s), comma-separated if needed. For deployed frontend builds, set `client/.env` to `VITE_API_URL=https://your-api-domain.example/api`. Never commit `.env` files.
+
+Set `CLIENT_URL` to the exact frontend origin(s), comma-separated if needed. For deployed frontend builds, set `client/.env` to `API_URL=https://your-api-domain.example/api`. Never commit `.env` files.
 
 ## Accounting rules
+
 - **Available balance** = completed credits − completed debits.
 - All-time credit/debit totals include pending entries to show all recorded movements; pending subtotals are separately visible.
 - Pending records do not change available balance until marked completed.
@@ -45,6 +50,7 @@ Set `CLIENT_URL` to the exact frontend origin(s), comma-separated if needed. For
 - This is an internal cash-movement tracker, not double-entry accounting or a bank feed.
 
 ## Security notes
+
 - Use HTTPS, strong unique passwords and a high-entropy JWT secret.
 - The dual-password deletion flow is a second-admin approval workflow, not a substitute for database backups or immutable audit retention.
 - Approved brand deletion archives the brand and permanently deletes its transactions. Back up MongoDB and export financial data securely.
