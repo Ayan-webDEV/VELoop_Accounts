@@ -1,4 +1,153 @@
-import 'dotenv/config';import express from 'express';import cors from 'cors';import helmet from 'helmet';import rateLimit from 'express-rate-limit';import bcrypt from 'bcryptjs';import connectDB from './config/db.js';import Admin from './models/Admin.js';import Brand from './models/Brand.js';import Transaction from './models/Transaction.js';import authRoutes from './routes/authRoutes.js';import transactionRoutes from './routes/transactionRoutes.js';import brandRoutes from './routes/brandRoutes.js';import notificationRoutes from './routes/notificationRoutes.js';import transferRoutes from './routes/transferRoutes.js';
-const app=express();app.use(helmet());const allowedOrigins=['https://velop-accounts.vercel.app','http://localhost:5173','http://127.0.0.1:5173',...(process.env.CLIENT_URL||'').split(',').map(v=>v.trim()).filter(Boolean)];app.use(cors({origin(origin,cb){if(!origin||allowedOrigins.includes(origin))return cb(null,true);return cb(new Error('Origin not allowed by CORS'))},methods:['GET','POST','PUT','PATCH','DELETE','OPTIONS'],allowedHeaders:['Content-Type','Authorization'],credentials:true,optionsSuccessStatus:204,maxAge:86400}));app.use(express.json({limit:'1mb'}));app.use('/api/auth/login',rateLimit({windowMs:15*60*1000,max:10,standardHeaders:true,legacyHeaders:false}));app.get('/api/health',(_req,res)=>res.json({ok:true,service:'VELoop Money Tracker API'}));app.use('/api/auth',authRoutes);app.use('/api/transactions',transactionRoutes);app.use('/api/brands',brandRoutes);app.use('/api/notifications',notificationRoutes);app.use('/api/transfers',transferRoutes);app.use((err,_req,res,_next)=>{console.error(err);res.status(500).json({message:'Unexpected server error'})});
-async function seed(){const seeds=[{name:process.env.ADMIN_ONE_NAME,email:process.env.ADMIN_ONE_EMAIL,password:process.env.ADMIN_ONE_PASSWORD,role:'founder'},{name:process.env.ADMIN_TWO_NAME,email:process.env.ADMIN_TWO_EMAIL,password:process.env.ADMIN_TWO_PASSWORD,role:'admin'}];for(const a of seeds){if(!a.name||!a.email||!a.password)throw new Error('Set both admin names, emails, and passwords in server/.env');const email=a.email.toLowerCase(),existing=await Admin.findOne({email});if(!existing)await Admin.create({name:a.name,email,passwordHash:await bcrypt.hash(a.password,12),role:a.role});else if(a.role==='founder'&&existing.role!=='founder'){existing.role='founder';await existing.save()}}const defaults=[{name:'VELoop Rewards & Engagement',slug:'velop-rewards-engagement',description:'Rewards platform and engagement operations',color:'#059669'},{name:'VELoop Internships',slug:'velop-internships',description:'Internship programme and administration',color:'#2563eb'},{name:'Formia',slug:'formia',description:'Formia products and operations',color:'#7c3aed'},{name:'VELoop Corporate & Shared Account',slug:'velop-corporate-shared-account',description:'Central funds and controlled allocations between business brands',accountType:'corporate',color:'#475569'}];const founder=await Admin.findOne({email:process.env.ADMIN_ONE_EMAIL.toLowerCase()});for(const b of defaults){const exists=await Brand.findOne({slug:b.slug});if(!exists)await Brand.create({...b,createdBy:founder._id,createdByName:founder.name})}const unassigned=await Transaction.find({brand:{$exists:false}});if(unassigned.length){const brand=await Brand.findOne({slug:'velop-rewards-engagement'});for(const t of unassigned){t.brand=brand._id;t.brandName=brand.name;await t.save()}}}
-const port=process.env.PORT||5000;connectDB().then(seed).then(()=>app.listen(port,()=>console.log(`API listening on ${port}`))).catch(e=>{console.error('Startup failed:',e.message);process.exit(1)});
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import bcrypt from "bcryptjs";
+import connectDB from "./config/db.js";
+import Admin from "./models/Admin.js";
+import Brand from "./models/Brand.js";
+import Transaction from "./models/Transaction.js";
+import authRoutes from "./routes/authRoutes.js";
+import transactionRoutes from "./routes/transactionRoutes.js";
+import brandRoutes from "./routes/brandRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import transferRoutes from "./routes/transferRoutes.js";
+const app = express();
+app.use(helmet());
+const allowedOrigins = [
+  "https://veloop-accounts.vercel.app",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  ...(process.env.CLIENT_URL || "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean),
+];
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error("Origin not allowed by CORS"));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+    optionsSuccessStatus: 204,
+    maxAge: 86400,
+  }),
+);
+app.use(express.json({ limit: "1mb" }));
+app.use(
+  "/api/auth/login",
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
+app.get("/api/health", (_req, res) =>
+  res.json({ ok: true, service: "VELoop Money Tracker API" }),
+);
+app.use("/api/auth", authRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/brands", brandRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/transfers", transferRoutes);
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ message: "Unexpected server error" });
+});
+async function seed() {
+  const seeds = [
+    {
+      name: process.env.ADMIN_ONE_NAME,
+      email: process.env.ADMIN_ONE_EMAIL,
+      password: process.env.ADMIN_ONE_PASSWORD,
+      role: "founder",
+    },
+    {
+      name: process.env.ADMIN_TWO_NAME,
+      email: process.env.ADMIN_TWO_EMAIL,
+      password: process.env.ADMIN_TWO_PASSWORD,
+      role: "admin",
+    },
+  ];
+  for (const a of seeds) {
+    if (!a.name || !a.email || !a.password)
+      throw new Error(
+        "Set both admin names, emails, and passwords in server/.env",
+      );
+    const email = a.email.toLowerCase(),
+      existing = await Admin.findOne({ email });
+    if (!existing)
+      await Admin.create({
+        name: a.name,
+        email,
+        passwordHash: await bcrypt.hash(a.password, 12),
+        role: a.role,
+      });
+    else if (a.role === "founder" && existing.role !== "founder") {
+      existing.role = "founder";
+      await existing.save();
+    }
+  }
+  const defaults = [
+    {
+      name: "VELoop Rewards & Engagement",
+      slug: "velop-rewards-engagement",
+      description: "Rewards platform and engagement operations",
+      color: "#059669",
+    },
+    {
+      name: "VELoop Internships",
+      slug: "velop-internships",
+      description: "Internship programme and administration",
+      color: "#2563eb",
+    },
+    {
+      name: "Formia",
+      slug: "formia",
+      description: "Formia products and operations",
+      color: "#7c3aed",
+    },
+    {
+      name: "VELoop Corporate & Shared Account",
+      slug: "velop-corporate-shared-account",
+      description:
+        "Central funds and controlled allocations between business brands",
+      accountType: "corporate",
+      color: "#475569",
+    },
+  ];
+  const founder = await Admin.findOne({
+    email: process.env.ADMIN_ONE_EMAIL.toLowerCase(),
+  });
+  for (const b of defaults) {
+    const exists = await Brand.findOne({ slug: b.slug });
+    if (!exists)
+      await Brand.create({
+        ...b,
+        createdBy: founder._id,
+        createdByName: founder.name,
+      });
+  }
+  const unassigned = await Transaction.find({ brand: { $exists: false } });
+  if (unassigned.length) {
+    const brand = await Brand.findOne({ slug: "velop-rewards-engagement" });
+    for (const t of unassigned) {
+      t.brand = brand._id;
+      t.brandName = brand.name;
+      await t.save();
+    }
+  }
+}
+const port = process.env.PORT || 5000;
+connectDB()
+  .then(seed)
+  .then(() => app.listen(port, () => console.log(`API listening on ${port}`)))
+  .catch((e) => {
+    console.error("Startup failed:", e.message);
+    process.exit(1);
+  });
